@@ -18,8 +18,10 @@ import com.google.android.cameraview.CameraView;
 import com.google.zxing.Result;
 import org.reactnative.camera.events.*;
 import org.reactnative.barcodedetector.RNBarcodeDetector;
+import org.reactnative.camera.utils.ImageDimensions;
 import org.reactnative.facedetector.RNFaceDetector;
 
+import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
@@ -332,6 +334,25 @@ public class RNCameraViewHelper {
         reactContext.getNativeModule(UIManagerModule.class).getEventDispatcher().dispatchEvent(event);
       }
     });
+  }
+
+  public static void emitModelProcessedEvent(final ViewGroup view, final ByteBuffer data, final ImageDimensions dimensions) {
+    final ReactContext reactContext = (ReactContext) view.getContext();
+    reactContext.runOnNativeModulesQueueThread(new Runnable() {
+      @Override
+      public void run() {
+        float density = view.getResources().getDisplayMetrics().density;
+
+        final double scaleX = (double) view.getWidth() / (dimensions.getWidth() * density);
+        final double scaleY = (double) view.getHeight() / (dimensions.getHeight() * density);
+
+        ModelProcessedEvent event = ModelProcessedEvent.obtain(view.getId(), data, dimensions, scaleX, scaleY);
+        reactContext.getNativeModule(UIManagerModule.class).getEventDispatcher().dispatchEvent(event);
+      }
+    });
+
+//    ReactContext reactContext = (ReactContext) view.getContext();
+//    reactContext.getNativeModule(UIManagerModule.class).getEventDispatcher().dispatchEvent(event);
   }
 
   // Utilities

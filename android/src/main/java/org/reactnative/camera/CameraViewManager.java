@@ -24,6 +24,7 @@ public class CameraViewManager extends ViewGroupManager<RNCameraView> {
     EVENT_ON_FACE_DETECTION_ERROR("onFaceDetectionError"),
     EVENT_ON_BARCODE_DETECTION_ERROR("onGoogleVisionBarcodeDetectionError"),
     EVENT_ON_TEXT_RECOGNIZED("onTextRecognized"),
+    EVENT_ON_MODEL_PROCESSED("onModelProcessed"),
     EVENT_ON_PICTURE_TAKEN("onPictureTaken"),
     EVENT_ON_PICTURE_SAVED("onPictureSaved"),
     EVENT_ON_RECORDING_START("onRecordingStart"),
@@ -215,6 +216,16 @@ public class CameraViewManager extends ViewGroupManager<RNCameraView> {
   @ReactProp(name = "textRecognizerEnabled")
   public void setTextRecognizing(RNCameraView view, boolean textRecognizerEnabled) {
     view.setShouldRecognizeText(textRecognizerEnabled);
+  }
+
+  @ReactProp(name = "modelParams")
+  public void setModelParams(RNCameraView view, ReadableMap model) {
+    String modelFile = model.getString("file");
+    int inputDimX = model.getInt("inputDimX");
+    int inputDimY = model.getInt("inputDimY");
+    int outputDim = model.getInt("outputDim");
+    int freqms = model.hasKey("freqms") ? model.getInt("freqms") : 0;
+    view.setModelFile(modelFile, inputDimX, inputDimY, outputDim, freqms);
   }
 
   /**---limit scan area addition---**/
