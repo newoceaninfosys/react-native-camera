@@ -7,6 +7,7 @@ import androidx.core.util.Pools;
 
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
+import java.util.List;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReadableArray;
@@ -16,6 +17,7 @@ import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.uimanager.events.Event;
 import com.facebook.react.uimanager.events.RCTEventEmitter;
 import org.reactnative.camera.CameraViewManager;
+import org.reactnative.camera.Recognition;
 import org.reactnative.camera.utils.ImageDimensions;
 import org.reactnative.facedetector.FaceDetectorUtils;
 
@@ -27,13 +29,13 @@ public class ModelProcessedEvent extends Event<ModelProcessedEvent> {
 
   private double mScaleX;
   private double mScaleY;
-  private ByteBuffer mData;
+  private List<Recognition> mRecognitions;
   private ImageDimensions mImageDimensions;
 
   private ModelProcessedEvent() {}
 
   public static ModelProcessedEvent obtain(int viewTag,
-                                           ByteBuffer data,
+                                           List<Recognition> recognitions,
                                            ImageDimensions dimensions,
                                            double scaleX,
                                            double scaleY) {
@@ -41,18 +43,18 @@ public class ModelProcessedEvent extends Event<ModelProcessedEvent> {
     if (event == null) {
       event = new ModelProcessedEvent();
     }
-    event.init(viewTag, data, dimensions, scaleX, scaleY);
+    event.init(viewTag, recognitions, dimensions, scaleX, scaleY);
     return event;
   }
 
   private void init(
           int viewTag,
-          ByteBuffer data,
+          List<Recognition> recognitions,
           ImageDimensions dimensions,
           double scaleX,
           double scaleY) {
     super.init(viewTag);
-    mData = data;
+    mRecognitions = recognitions;
     mImageDimensions = dimensions;
     mScaleX = scaleX;
     mScaleY = scaleY;
@@ -69,16 +71,22 @@ public class ModelProcessedEvent extends Event<ModelProcessedEvent> {
   }
 
   private WritableMap serializeEventData() {
-    mData.rewind();
-    byte[] byteArray = new byte[mData.capacity()];
-    mData.get(byteArray);
     WritableArray dataList = Arguments.createArray();
-    for (byte b : byteArray) {
-      dataList.pushInt((int)b);
+    for (Recognition reg : mRecognitions) {
+      WritableMap event = Arguments.createMap();
+      event.putString("label", reg.getTitle());
+      event.putDouble("confidence", reg.getConfidence());
+      WritableArray locs = Arguments.createArray();
+      locs.pushDouble(reg.getLocation().top);
+      locs.pushDouble(reg.getLocation().left);
+      locs.pushDouble(reg.getLocation().width());
+      locs.pushDouble(reg.getLocation().height());
+      event.putArray("location", locs);
+      dataList.pushMap(event);
     }
 
     WritableMap event = Arguments.createMap();
-    event.putString("type", "model");
+    event.putString("type", "recognition");
     event.putArray("data", dataList);
     event.putInt("target", getViewTag());
 

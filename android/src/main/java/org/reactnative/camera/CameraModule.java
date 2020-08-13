@@ -492,4 +492,30 @@ public class CameraModule extends ReactContextBaseJavaModule {
           }
       });
   }
+
+    @ReactMethod
+    private void loadModel(final ReadableMap model, final int viewTag) {
+        final ReactApplicationContext context = getReactApplicationContext();
+
+        UIManagerModule uiManager = context.getNativeModule(UIManagerModule.class);
+        uiManager.addUIBlock(new UIBlock() {
+            @Override
+            public void execute(NativeViewHierarchyManager nativeViewHierarchyManager) {
+                RNCameraView cameraView = (RNCameraView) nativeViewHierarchyManager.resolveView(viewTag);
+                try {
+                    String modelFile = model.getString("file");
+                    String labelFile = model.getString("label");
+                    int inputDimX = model.getInt("inputDimX");
+                    int inputDimY = model.getInt("inputDimY");
+                    int outputDim = model.getInt("outputDim");
+                    int freqms = model.hasKey("freqms") ? model.getInt("freqms") : 0;
+
+                    cameraView.setModelFile(modelFile, labelFile, inputDimX, inputDimY, outputDim, freqms);
+                }
+                catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
 }

@@ -218,16 +218,6 @@ public class CameraViewManager extends ViewGroupManager<RNCameraView> {
     view.setShouldRecognizeText(textRecognizerEnabled);
   }
 
-  @ReactProp(name = "modelParams")
-  public void setModelParams(RNCameraView view, ReadableMap model) {
-    String modelFile = model.getString("file");
-    int inputDimX = model.getInt("inputDimX");
-    int inputDimY = model.getInt("inputDimY");
-    int outputDim = model.getInt("outputDim");
-    int freqms = model.hasKey("freqms") ? model.getInt("freqms") : 0;
-    view.setModelFile(modelFile, inputDimX, inputDimY, outputDim, freqms);
-  }
-
   /**---limit scan area addition---**/
   @ReactProp(name = "rectOfInterest")
   public void setRectOfInterest(RNCameraView view, ReadableMap coordinates) {
