@@ -286,6 +286,7 @@ type PropsType = typeof View.props & {
   videoStabilizationMode?: number | string,
   pictureSize?: string,
   rectOfInterest: Rect,
+  onModelProcessed?: ({ data: Array<number> }) => void,
 };
 
 type StateType = {
@@ -447,6 +448,7 @@ export default class Camera extends React.Component<PropsType, StateType> {
     mirrorVideo: PropTypes.bool,
     rectOfInterest: PropTypes.any,
     defaultVideoQuality: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    onModelProcessed: PropTypes.func,
   };
 
   static defaultProps: Object = {
@@ -642,6 +644,13 @@ export default class Camera extends React.Component<PropsType, StateType> {
 
   resumePreview() {
     CameraManager.resumePreview(this._cameraHandle);
+  }
+
+  loadModel(params) {
+    if (!this._cameraHandle) {
+      throw 'Camera handle cannot be null';
+    }
+    CameraManager.loadModel(params, this._cameraHandle);
   }
 
   _onMountError = ({ nativeEvent }: EventCallbackArgumentsType) => {
@@ -848,6 +857,9 @@ export default class Camera extends React.Component<PropsType, StateType> {
             onTextRecognized={this._onObjectDetected(this.props.onTextRecognized)}
             onPictureSaved={this._onPictureSaved}
             onSubjectAreaChanged={this._onSubjectAreaChanged}
+            onModelProcessed={this._onObjectDetected(
+              this.props.onModelProcessed,
+            )}
           />
           {this.renderChildren()}
         </View>
@@ -880,6 +892,10 @@ export default class Camera extends React.Component<PropsType, StateType> {
 
     if (props.onTextRecognized) {
       newProps.textRecognizerEnabled = true;
+    }
+
+    if (props.onModelProcessed) {
+      newProps.objectDetectorEnabled = true;
     }
 
     if (Platform.OS === 'ios') {
@@ -924,5 +940,7 @@ const RNCamera = requireNativeComponent('RNCamera', Camera, {
     onSubjectAreaChanged: true,
     renderToHardwareTextureAndroid: true,
     testID: true,
+    onModelProcessed: true,
+    objectDetectorEnabled: true,
   },
 });
