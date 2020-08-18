@@ -1,4 +1,4 @@
-package org.reactnative.camera;
+package org.reactnative.camera.tflite;
 
 import com.facebook.react.bridge.ReadableArray;
 
@@ -14,6 +14,7 @@ public class ObjectDetectorParams {
     private final boolean maintainAspect;
     private final double minConfidence;
     private final ReadableArray desiredPreviewSize;
+    private final boolean savePreview;
 
     public ObjectDetectorParams(
             final String modelFile,
@@ -26,7 +27,8 @@ public class ObjectDetectorParams {
             final boolean isQuantized,
             final boolean maintainAspect,
             final double minConfidence,
-            final ReadableArray desiredPreviewSize) {
+            final ReadableArray desiredPreviewSize,
+            final boolean savePreview) {
         this.modelFile = modelFile;
         this.labelFile = labelFile;
         this.inputSize = inputSize;
@@ -38,6 +40,7 @@ public class ObjectDetectorParams {
         this.maintainAspect = maintainAspect;
         this.minConfidence = minConfidence;
         this.desiredPreviewSize = desiredPreviewSize;
+        this.savePreview = savePreview;
     }
 
     public String getModelFile() { return modelFile; }
@@ -51,4 +54,5 @@ public class ObjectDetectorParams {
     public boolean getMaintainAspect() { return maintainAspect; }
     public double getMinConfidence() { return minConfidence; }
     public ReadableArray getDesiredPreviewSize() { return desiredPreviewSize; }
+    public boolean getSavePreview() { return savePreview; }
 }

@@ -662,6 +662,7 @@ export default class Camera extends React.Component<PropsType, StateType> {
       minConfidence: 0.6,
       maintainAspect: false,
       desiredPreviewSize: [640, 480],
+      savePreview: false,
       ...new_params
     }
     CameraManager.loadObjectDetectorModel(params, this._cameraHandle);

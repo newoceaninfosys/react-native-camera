@@ -1,12 +1,10 @@
 package org.reactnative.camera.tasks;
 
-import org.reactnative.camera.Recognition;
+import org.reactnative.camera.tflite.Recognition;
 import org.tensorflow.lite.Interpreter;
 
 import android.graphics.Bitmap;
 import android.graphics.RectF;
-import android.os.SystemClock;
-import android.util.Log;
 
 import java.nio.ByteBuffer;
 
@@ -15,7 +13,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
-import java.util.concurrent.TimeUnit;
 
 public class ModelProcessorAsyncTask extends android.os.AsyncTask<Void, Void, List<Recognition>> {
 
