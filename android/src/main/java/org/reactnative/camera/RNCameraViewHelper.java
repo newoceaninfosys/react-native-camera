@@ -21,7 +21,6 @@ import org.reactnative.barcodedetector.RNBarcodeDetector;
 import org.reactnative.camera.utils.ImageDimensions;
 import org.reactnative.facedetector.RNFaceDetector;
 
-import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.List;
@@ -337,7 +336,7 @@ public class RNCameraViewHelper {
     });
   }
 
-  public static void emitModelProcessedEvent(final ViewGroup view, final List<Recognition> recognitions, final ImageDimensions dimensions) {
+  public static void emitObjectDetectedEvent(final ViewGroup view, final List<Recognition> recognitions, final ImageDimensions dimensions) {
     final ReactContext reactContext = (ReactContext) view.getContext();
     reactContext.runOnNativeModulesQueueThread(new Runnable() {
       @Override
@@ -347,7 +346,7 @@ public class RNCameraViewHelper {
         final double scaleX = (double) view.getWidth() / (dimensions.getWidth() * density);
         final double scaleY = (double) view.getHeight() / (dimensions.getHeight() * density);
 
-        ModelProcessedEvent event = ModelProcessedEvent.obtain(view.getId(), recognitions, dimensions, scaleX, scaleY);
+        ObjectDetectedEvent event = ObjectDetectedEvent.obtain(view.getId(), recognitions, dimensions, scaleX, scaleY);
         reactContext.getNativeModule(UIManagerModule.class).getEventDispatcher().dispatchEvent(event);
       }
     });

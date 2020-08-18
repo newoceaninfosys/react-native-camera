@@ -494,7 +494,7 @@ public class CameraModule extends ReactContextBaseJavaModule {
   }
 
     @ReactMethod
-    private void loadModel(final ReadableMap model, final int viewTag) {
+    private void loadObjectDetectorModel(final ReadableMap model, final int viewTag) {
         final ReactApplicationContext context = getReactApplicationContext();
 
         UIManagerModule uiManager = context.getNativeModule(UIManagerModule.class);
@@ -505,12 +505,21 @@ public class CameraModule extends ReactContextBaseJavaModule {
                 try {
                     String modelFile = model.getString("file");
                     String labelFile = model.getString("label");
-                    int inputDimX = model.getInt("inputDimX");
-                    int inputDimY = model.getInt("inputDimY");
-                    int outputDim = model.getInt("outputDim");
-                    int freqms = model.hasKey("freqms") ? model.getInt("freqms") : 0;
+                    int inputSize = model.getInt("inputSize");
+                    int numThreads = model.getInt("numThreads");
+                    double imageMean = model.getDouble("imageMean");
+                    double imageSTD = model.getDouble("imageSTD");
+                    int labelOffset = model.getInt("labelOffset");
+                    boolean isQuantized = model.getBoolean("isQuantized");
+                    boolean maintainAspect = model.getBoolean("maintainAspect");
+                    double minConfidence = model.getDouble("minConfidence");
+                    ReadableArray desiredPreviewSize = model.getArray("desiredPreviewSize");
 
-                    cameraView.setModelFile(modelFile, labelFile, inputDimX, inputDimY, outputDim, freqms);
+                    ObjectDetectorParams params = new ObjectDetectorParams(
+                            modelFile, labelFile, inputSize, numThreads, imageMean, imageSTD, labelOffset, isQuantized, maintainAspect, minConfidence, desiredPreviewSize
+                    );
+
+                    cameraView.setObjectDetectorModel(params);
                 }
                 catch (Exception e) {
                     e.printStackTrace();
