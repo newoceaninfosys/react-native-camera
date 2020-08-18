@@ -101,4 +101,7 @@ const styles = StyleSheet.create({
 export default App;
 ```
 
-![IbWBAaD](https://i.imgur.com/IbWBAaD.gif)
+### Demo
+https://i.imgur.com/IbWBAaD.gif
+
+![Demo](https://i.imgur.com/IbWBAaD.gif)
