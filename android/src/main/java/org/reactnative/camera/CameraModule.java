@@ -3,17 +3,15 @@ package org.reactnative.camera;
 import android.Manifest;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.util.Log;
-import android.widget.Toast;
 
 import com.facebook.react.bridge.*;
-import com.facebook.react.common.build.ReactBuildConfig;
 import com.facebook.react.uimanager.NativeViewHierarchyManager;
 import com.facebook.react.uimanager.UIBlock;
 import com.facebook.react.uimanager.UIManagerModule;
 import com.google.android.cameraview.AspectRatio;
 import com.google.zxing.BarcodeFormat;
 import org.reactnative.barcodedetector.BarcodeFormatUtils;
+import org.reactnative.camera.tflite.ObjectDetectorParams;
 import org.reactnative.camera.utils.ScopedContext;
 import org.reactnative.facedetector.RNFaceDetector;
 import com.google.android.cameraview.Size;
@@ -514,9 +512,10 @@ public class CameraModule extends ReactContextBaseJavaModule {
                     boolean maintainAspect = model.getBoolean("maintainAspect");
                     double minConfidence = model.getDouble("minConfidence");
                     ReadableArray desiredPreviewSize = model.getArray("desiredPreviewSize");
+                    boolean savePreview = model.getBoolean("savePreview");
 
                     ObjectDetectorParams params = new ObjectDetectorParams(
-                            modelFile, labelFile, inputSize, numThreads, imageMean, imageSTD, labelOffset, isQuantized, maintainAspect, minConfidence, desiredPreviewSize
+                            modelFile, labelFile, inputSize, numThreads, imageMean, imageSTD, labelOffset, isQuantized, maintainAspect, minConfidence, desiredPreviewSize, savePreview
                     );
 
                     cameraView.setObjectDetectorModel(params);

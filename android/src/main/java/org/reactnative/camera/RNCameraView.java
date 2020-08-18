@@ -11,8 +11,11 @@ import android.graphics.Rect;
 import android.graphics.YuvImage;
 import android.media.CamcorderProfile;
 import android.os.Build;
+
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import android.os.Environment;
 import android.util.DisplayMetrics;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
@@ -29,6 +32,9 @@ import com.google.zxing.MultiFormatReader;
 import com.google.zxing.Result;
 import org.reactnative.barcodedetector.RNBarcodeDetector;
 import org.reactnative.camera.tasks.*;
+import org.reactnative.camera.tflite.ObjectDetectionAPI;
+import org.reactnative.camera.tflite.ObjectDetectorParams;
+import org.reactnative.camera.tflite.Recognition;
 import org.reactnative.camera.utils.ImageDimensions;
 import org.reactnative.camera.utils.RNFileUtils;
 import org.reactnative.facedetector.RNFaceDetector;
@@ -36,6 +42,7 @@ import android.content.res.AssetFileDescriptor;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
@@ -87,11 +94,9 @@ public class RNCameraView extends CameraView implements LifecycleEventListener, 
 
   // Object Detection
   private Vector<String> labels = new Vector<String>();
-  private Interpreter mObjectDetector;
-  private ByteBuffer mModelInput;
-  private int[] mModelViewBuf;
   private Bitmap mCroppedBitmap;
   private ObjectDetectorParams _params;
+  private ObjectDetectionAPI objectDetectorAPI;
 
   private boolean mShouldDetectFaces = false;
   private boolean mShouldGoogleDetectBarcodes = false;
@@ -120,6 +125,7 @@ public class RNCameraView extends CameraView implements LifecycleEventListener, 
   public RNCameraView(ThemedReactContext themedReactContext) {
     super(themedReactContext, true);
     mThemedReactContext = themedReactContext;
+
     themedReactContext.addLifecycleEventListener(this);
 
     addCallback(new Callback() {
@@ -240,9 +246,8 @@ public class RNCameraView extends CameraView implements LifecycleEventListener, 
 
         if (willCallObjectDetectTask) {
           objectProcessorTaskLock = true;
-          getImageData((TextureView) cameraView.getView());
           ObjectDetectorAsyncTaskDelegate delegate = (ObjectDetectorAsyncTaskDelegate) cameraView;
-          new ObjectDetectorAsyncTask(delegate, mObjectDetector, labels, mModelInput, width, height, correctRotation, mCroppedBitmap, _params).execute();
+          new ObjectDetectorAsyncTask(delegate, objectDetectorAPI, width, height, correctRotation, getCroppedBitmap((TextureView) cameraView.getView())).execute();
         }
       }
     });
@@ -641,82 +646,24 @@ public class RNCameraView extends CameraView implements LifecycleEventListener, 
     setScanning(mShouldDetectFaces || mShouldGoogleDetectBarcodes || mShouldScanBarCodes || mShouldRecognizeText || mShouldDetectObjects);
   }
 
-  private MappedByteBuffer loadModelFile() throws IOException {
-    AssetFileDescriptor fileDescriptor = mThemedReactContext.getAssets().openFd(_params.getModelFile());
-    FileInputStream inputStream = new FileInputStream(fileDescriptor.getFileDescriptor());
-    FileChannel fileChannel = inputStream.getChannel();
-    long startOffset = fileDescriptor.getStartOffset();
-    long declaredLength = fileDescriptor.getDeclaredLength();
-    return fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength);
-  }
-
-  private void setupObjectDetectionProcessor() {
-    try {
-      InputStream labelInputStream = mThemedReactContext.getAssets().open(_params.getLabelFile());
-      BufferedReader br = new BufferedReader(new InputStreamReader(labelInputStream));
-      String line;
-      while ((line = br.readLine()) != null) {
-        labels.add(line);
-      }
-      br.close();
-
-      mObjectDetector = new Interpreter(loadModelFile());
-      mObjectDetector.setNumThreads(_params.getNumThreads());
-
-      int numBytesPerChannel;
-      if (_params.getIsQuantized()) {
-        numBytesPerChannel = 1; // Quantized
-      } else {
-        numBytesPerChannel = 4; // Floating point
-      }
-
-//      mModelInput = ByteBuffer.allocateDirect(_params.getInputSize() * _params.getInputSize() * 3);
-      mModelInput = ByteBuffer.allocateDirect(1 * _params.getInputSize() * _params.getInputSize() * 3 * numBytesPerChannel);
-      mModelViewBuf = new int[_params.getInputSize() * _params.getInputSize()];
-    } catch(Exception e) {
-      e.printStackTrace();
-    }
-  }
-
   public void setObjectDetectorModel(ObjectDetectorParams params) {
     this._params = params;
     boolean shouldProcessModel = (params.getModelFile() != null && params.getLabelFile() != null);
-    if (shouldProcessModel && mObjectDetector == null) {
-      setupObjectDetectionProcessor();
+    if (shouldProcessModel) {
+      if(objectDetectorAPI != null) {
+        objectDetectorAPI.destroy();
+      }
+      objectDetectorAPI = new ObjectDetectionAPI(mThemedReactContext, params);
     }
-//    this.mShouldDetectObjects = shouldProcessModel;
-//    setScanning(mShouldDetectFaces || mShouldGoogleDetectBarcodes || mShouldScanBarCodes || mShouldRecognizeText || mShouldDetectObjects);
   }
 
-  private void getImageData(TextureView view) {
+  private Bitmap getCroppedBitmap(TextureView view) {
     if (_params == null) {
-      return;
+      return null;
     }
 
-    mCroppedBitmap = view.getBitmap(_params.getInputSize(), _params.getInputSize());
-    if (mCroppedBitmap == null) {
-      return;
-    }
-    mModelInput.rewind();
-    mCroppedBitmap.getPixels(mModelViewBuf, 0, mCroppedBitmap.getWidth(), 0, 0, mCroppedBitmap.getWidth(), mCroppedBitmap.getHeight());
-    float imageMean = (float)_params.getImageMean();
-    float imageSTD = (float)_params.getImageSTD();
-    for (int i = 0; i < _params.getInputSize(); ++i) {
-      for (int j = 0; j < _params.getInputSize(); ++j) {
-        final int pixelValue = mModelViewBuf[i * _params.getInputSize() + j];
-        if(_params.getIsQuantized()) {
-          // Quantized model
-          mModelInput.put((byte) ((pixelValue >> 16) & 0xFF));
-          mModelInput.put((byte) ((pixelValue >> 8) & 0xFF));
-          mModelInput.put((byte) (pixelValue & 0xFF));
-        } else {
-          // Float model
-          mModelInput.putFloat((((pixelValue >> 16) & 0xFF) - imageMean) / imageSTD);
-          mModelInput.putFloat((((pixelValue >> 8) & 0xFF) - imageMean) / imageSTD);
-          mModelInput.putFloat(((pixelValue & 0xFF) - imageMean) / imageSTD);
-        }
-      }
-    }
+    // Capture and resize to inputSize
+    return view.getBitmap(_params.getInputSize(), _params.getInputSize());
   }
 
   @Override
@@ -808,8 +755,8 @@ public class RNCameraView extends CameraView implements LifecycleEventListener, 
     if (mGoogleBarcodeDetector != null) {
       mGoogleBarcodeDetector.release();
     }
-    if (mObjectDetector != null) {
-      mObjectDetector.close();
+    if (objectDetectorAPI != null) {
+      objectDetectorAPI.destroy();
     }
     mMultiFormatReader = null;
     mThemedReactContext.removeLifecycleEventListener(this);

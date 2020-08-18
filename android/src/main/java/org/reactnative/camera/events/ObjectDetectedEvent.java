@@ -10,7 +10,7 @@ import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.uimanager.events.Event;
 import com.facebook.react.uimanager.events.RCTEventEmitter;
 import org.reactnative.camera.CameraViewManager;
-import org.reactnative.camera.Recognition;
+import org.reactnative.camera.tflite.Recognition;
 import org.reactnative.camera.utils.ImageDimensions;
 
 public class ObjectDetectedEvent extends Event<ObjectDetectedEvent> {

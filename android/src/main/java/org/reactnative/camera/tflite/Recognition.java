@@ -1,4 +1,4 @@
-package org.reactnative.camera;
+package org.reactnative.camera.tflite;
 
 import android.graphics.RectF;
 
