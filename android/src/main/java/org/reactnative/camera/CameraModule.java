@@ -492,4 +492,39 @@ public class CameraModule extends ReactContextBaseJavaModule {
           }
       });
   }
+
+    @ReactMethod
+    private void loadObjectDetectorModel(final ReadableMap model, final int viewTag) {
+        final ReactApplicationContext context = getReactApplicationContext();
+
+        UIManagerModule uiManager = context.getNativeModule(UIManagerModule.class);
+        uiManager.addUIBlock(new UIBlock() {
+            @Override
+            public void execute(NativeViewHierarchyManager nativeViewHierarchyManager) {
+                RNCameraView cameraView = (RNCameraView) nativeViewHierarchyManager.resolveView(viewTag);
+                try {
+                    String modelFile = model.getString("file");
+                    String labelFile = model.getString("label");
+                    int inputSize = model.getInt("inputSize");
+                    int numThreads = model.getInt("numThreads");
+                    double imageMean = model.getDouble("imageMean");
+                    double imageSTD = model.getDouble("imageSTD");
+                    int labelOffset = model.getInt("labelOffset");
+                    boolean isQuantized = model.getBoolean("isQuantized");
+                    boolean maintainAspect = model.getBoolean("maintainAspect");
+                    double minConfidence = model.getDouble("minConfidence");
+                    ReadableArray desiredPreviewSize = model.getArray("desiredPreviewSize");
+
+                    ObjectDetectorParams params = new ObjectDetectorParams(
+                            modelFile, labelFile, inputSize, numThreads, imageMean, imageSTD, labelOffset, isQuantized, maintainAspect, minConfidence, desiredPreviewSize
+                    );
+
+                    cameraView.setObjectDetectorModel(params);
+                }
+                catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
 }

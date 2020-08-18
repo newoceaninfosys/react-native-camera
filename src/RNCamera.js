@@ -279,6 +279,7 @@ type PropsType = typeof View.props & {
   faceDetectionClassifications?: number,
   onFacesDetected?: ({ faces: Array<TrackedFaceFeature> }) => void,
   onTextRecognized?: ({ textBlocks: Array<TrackedTextFeature> }) => void,
+  onObjectDetected?: ({ data: Array<number> }) => void,
   captureAudio?: boolean,
   keepAudioSession?: boolean,
   useCamera2Api?: boolean,
@@ -413,6 +414,7 @@ export default class Camera extends React.Component<PropsType, StateType> {
     onGoogleVisionBarcodesDetected: PropTypes.func,
     onFacesDetected: PropTypes.func,
     onTextRecognized: PropTypes.func,
+    onObjectDetected: PropTypes.func,
     onSubjectAreaChanged: PropTypes.func,
     trackingEnabled: PropTypes.bool,
     faceDetectionMode: PropTypes.number,
@@ -644,6 +646,27 @@ export default class Camera extends React.Component<PropsType, StateType> {
     CameraManager.resumePreview(this._cameraHandle);
   }
 
+  loadObjectDetectorModel(new_params) {
+    if (!this._cameraHandle) {
+      throw 'Camera handle cannot be null';
+    }
+    const params = {
+      file: 'detect.tflite',
+      label: 'labelmap.txt',
+      imageMean: 127.5,
+      imageSTD: 127.5,
+      numThreads: 4,
+      inputSize: 300,
+      labelOffset: 1,
+      isQuantized: true,
+      minConfidence: 0.6,
+      maintainAspect: false,
+      desiredPreviewSize: [640, 480],
+      ...new_params
+    }
+    CameraManager.loadObjectDetectorModel(params, this._cameraHandle);
+  }
+
   _onMountError = ({ nativeEvent }: EventCallbackArgumentsType) => {
     if (this.props.onMountError) {
       this.props.onMountError(nativeEvent);
@@ -846,6 +869,7 @@ export default class Camera extends React.Component<PropsType, StateType> {
             onTouch={this._onTouch}
             onFacesDetected={this._onObjectDetected(this.props.onFacesDetected)}
             onTextRecognized={this._onObjectDetected(this.props.onTextRecognized)}
+            onObjectDetected={this._onObjectDetected(this.props.onObjectDetected)}
             onPictureSaved={this._onPictureSaved}
             onSubjectAreaChanged={this._onSubjectAreaChanged}
           />
@@ -882,6 +906,10 @@ export default class Camera extends React.Component<PropsType, StateType> {
       newProps.textRecognizerEnabled = true;
     }
 
+    if (props.onObjectDetected) {
+      newProps.objectDetectorEnabled = true;
+    }
+
     if (Platform.OS === 'ios') {
       delete newProps.ratio;
     }
@@ -910,6 +938,7 @@ const RNCamera = requireNativeComponent('RNCamera', Camera, {
     googleVisionBarcodeDetectorEnabled: true,
     faceDetectorEnabled: true,
     textRecognizerEnabled: true,
+    objectDetectorEnabled: true,
     importantForAccessibility: true,
     onBarCodeRead: true,
     onGoogleVisionBarcodesDetected: true,

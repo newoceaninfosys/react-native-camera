@@ -24,6 +24,7 @@ public class CameraViewManager extends ViewGroupManager<RNCameraView> {
     EVENT_ON_FACE_DETECTION_ERROR("onFaceDetectionError"),
     EVENT_ON_BARCODE_DETECTION_ERROR("onGoogleVisionBarcodeDetectionError"),
     EVENT_ON_TEXT_RECOGNIZED("onTextRecognized"),
+    EVENT_ON_OBJECT_DETECTED("onObjectDetected"),
     EVENT_ON_PICTURE_TAKEN("onPictureTaken"),
     EVENT_ON_PICTURE_SAVED("onPictureSaved"),
     EVENT_ON_RECORDING_START("onRecordingStart"),
@@ -238,4 +239,9 @@ public class CameraViewManager extends ViewGroupManager<RNCameraView> {
     }
   }
   /**---limit scan area addition---**/
+
+  @ReactProp(name = "objectDetectorEnabled")
+  public void setObjectDetecting(RNCameraView view, boolean objectDetectorEnabled) {
+    view.setShouldDetectObjects(objectDetectorEnabled);
+  }
 }
