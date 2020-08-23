@@ -6,6 +6,7 @@
 #import "FaceDetectorManagerMlkit.h"
 #import "BarcodeDetectorManagerMlkit.h"
 #import "TextDetectorManager.h"
+#import "ObjectDetectorManager.h"
 
 @class RNCamera;
 @class RNCustomWhiteBalanceSettings;
@@ -45,9 +46,15 @@
 @property(nonatomic, assign) BOOL isReadingBarCodes;
 @property(nonatomic, assign) BOOL isRecordingInterrupted;
 @property(nonatomic, assign) BOOL isDetectingFaces;
+
+@property(nonatomic, assign) BOOL isDetectingObjects;
+
 @property(nonatomic, assign) BOOL canReadText;
 @property(nonatomic, assign) BOOL canDetectFaces;
 @property(nonatomic, assign) BOOL canDetectBarcodes;
+
+@property(nonatomic, assign) BOOL canDetectObjects;
+
 @property(nonatomic, assign) BOOL captureAudio;
 @property(nonatomic, assign) BOOL keepAudioSession;
 @property(nonatomic, assign) BOOL useNativeZoom;
@@ -115,4 +122,7 @@
 - (bool)isRecording;
 - (void)onSubjectAreaChanged:(NSDictionary *)event;
 
+- (void)setObjectDetectorModel:(NSDictionary *)options;
+- (void)setupOrDisableObjectDetector;
+- (void)onObject:(NSDictionary *)event;
 @end

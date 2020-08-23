@@ -45,6 +45,10 @@
 @property (nonatomic, assign) BOOL isExposedOnPoint;
 @property (nonatomic, assign) BOOL invertImageData;
 
+@property (nonatomic, copy) RCTDirectEventBlock onObjectDetected;
+@property (nonatomic, assign) BOOL finishedDetectingObject;
+@property (nonatomic, strong) id objectDetector;
+
 @end
 
 @implementation RNCamera
@@ -65,8 +69,14 @@ BOOL _sessionInterrupted = NO;
         self.textDetector = [self createTextDetector];
         self.faceDetector = [self createFaceDetectorMlKit];
         self.barcodeDetector = [self createBarcodeDetectorMlKit];
+        
+        self.objectDetector = [self createObjectDetector];
+        
         self.finishedReadingText = true;
         self.finishedDetectingFace = true;
+        
+        self.finishedDetectingObject = true;
+        
         self.startText = [NSDate date];
         self.startFace = [NSDate date];
 #if !(TARGET_IPHONE_SIMULATOR)
@@ -2170,9 +2180,11 @@ BOOL _sessionInterrupted = NO;
     NSDate *methodFinish = [NSDate date];
     NSTimeInterval timePassedSinceSubmittingForText = [methodFinish timeIntervalSinceDate:self.startText];
     NSTimeInterval timePassedSinceSubmittingForFace = [methodFinish timeIntervalSinceDate:self.startFace];
+    NSTimeInterval timePassedSinceSubmittingForObject = [methodFinish timeIntervalSinceDate:self.startText];
     BOOL canSubmitForTextDetection = timePassedSinceSubmittingForText > 0.5 && _finishedReadingText && self.canReadText && [self.textDetector isRealDetector];
     BOOL canSubmitForFaceDetection = timePassedSinceSubmittingForFace > 0.5 && _finishedDetectingFace && self.canDetectFaces && [self.faceDetector isRealDetector];
     BOOL canSubmitForBarcodeDetection = self.canDetectBarcodes && [self.barcodeDetector isRealDetector];
+    BOOL canSubmitForObjectDetection = timePassedSinceSubmittingForObject > 0.5 && _finishedDetectingObject && self.canDetectObjects && [self.objectDetector isRealDetector];
     if (canSubmitForFaceDetection || canSubmitForTextDetection || canSubmitForBarcodeDetection) {
         CGSize previewSize = CGSizeMake(_previewLayer.frame.size.width, _previewLayer.frame.size.height);
         NSInteger position = self.videoCaptureDeviceInput.device.position;
@@ -2228,11 +2240,73 @@ BOOL _sessionInterrupted = NO;
                 [self onBarcodesDetected:eventBarcode];
             }];
         }
+        
+        // find objects
+        if (canSubmitForObjectDetection) {
+            _finishedDetectingObject = false;
+            self.startText = [NSDate date];
+            [self.objectDetector findObjects:image completed:^(NSArray * objects) {
+                NSDictionary *eventText = @{@"type" : @"objectDetected", @"data" : objects};
+                [self onObject:eventText];
+                self.finishedDetectingObject = true;
+            }];
+        }
     }
 }
 
 - (bool)isRecording {
     return self.movieFileOutput != nil ? self.movieFileOutput.isRecording : NO;
+}
+
+# pragma mark - TextDetector
+
+- (void)setObjectDetectorModel:(NSDictionary *)options
+{
+    
+}
+
+- (void)onObject:(NSDictionary *)event
+{
+    if (_onObjectDetected && _session) {
+        _onObjectDetected(event);
+    }
+}
+
+-(id)createObjectDetector
+{
+    Class objectDetectorManagerClass = NSClassFromString(@"ObjectDetectorManager");
+    return [[objectDetectorManagerClass alloc] init];
+}
+
+- (void)setupOrDisableObjectDetector
+{
+//    if ([self canReadText] && [self.textDetector isRealDetector]){
+//        if (!self.videoDataOutput) {
+//            self.videoDataOutput = [[AVCaptureVideoDataOutput alloc] init];
+//            if (![self.session canAddOutput:_videoDataOutput]) {
+//                NSLog(@"Failed to setup video data output");
+//                [self stopTextRecognition];
+//                return;
+//            }
+//            NSDictionary *rgbOutputSettings = [NSDictionary
+//                dictionaryWithObject:[NSNumber numberWithInt:kCMPixelFormat_32BGRA]
+//                                forKey:(id)kCVPixelBufferPixelFormatTypeKey];
+//            [self.videoDataOutput setVideoSettings:rgbOutputSettings];
+//            [self.videoDataOutput setAlwaysDiscardsLateVideoFrames:YES];
+//            [self.videoDataOutput setSampleBufferDelegate:self queue:self.sessionQueue];
+//            [self.session addOutput:_videoDataOutput];
+//        }
+//    } else {
+//        [self stopTextRecognition];
+//    }
+}
+
+- (void)stopObjectRecognition
+{
+    if (self.videoDataOutput && !self.canDetectObjects) {
+        [self.session removeOutput:self.videoDataOutput];
+    }
+    self.videoDataOutput = nil;
 }
 
 @end

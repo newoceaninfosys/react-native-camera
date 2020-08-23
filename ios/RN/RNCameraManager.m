@@ -28,6 +28,7 @@ RCT_EXPORT_VIEW_PROPERTY(onTextRecognized, RCTDirectEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(onSubjectAreaChanged, RCTDirectEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(videoStabilizationMode, NSInteger);
 RCT_EXPORT_VIEW_PROPERTY(onTouch, RCTDirectEventBlock);
+RCT_EXPORT_VIEW_PROPERTY(onObjectDetected, RCTDirectEventBlock);
 
 
 + (BOOL)requiresMainQueueSetup
@@ -93,7 +94,7 @@ RCT_EXPORT_VIEW_PROPERTY(onTouch, RCTDirectEventBlock);
 
 - (NSArray<NSString *> *)supportedEvents
 {
-    return @[@"onCameraReady", @"onAudioInterrupted", @"onAudioConnected", @"onMountError", @"onBarCodeRead", @"onFacesDetected", @"onPictureTaken", @"onPictureSaved", @"onRecordingStart", @"onRecordingEnd", @"onTextRecognized", @"onGoogleVisionBarcodesDetected", @"onSubjectAreaChanged",@"onTouch"];
+    return @[@"onCameraReady", @"onAudioInterrupted", @"onAudioConnected", @"onMountError", @"onBarCodeRead", @"onFacesDetected", @"onPictureTaken", @"onPictureSaved", @"onRecordingStart", @"onRecordingEnd", @"onTextRecognized", @"onGoogleVisionBarcodesDetected", @"onSubjectAreaChanged",@"onTouch",@"onObjectDetected"];
 }
 
 + (NSDictionary *)validCodecTypes
@@ -641,6 +642,20 @@ RCT_EXPORT_METHOD(getCameraIds:(RCTPromiseResolveBlock)resolve
     }
 
     resolve(res);
+}
+
+RCT_REMAP_METHOD(loadObjectDetectorModel,
+                 options:(NSDictionary *)options
+                 reactTag:(nonnull NSNumber *)reactTag)
+{
+    [self.bridge.uiManager addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, RNCamera *> *viewRegistry) {
+        RNCamera *view = viewRegistry[reactTag];
+        if (![view isKindOfClass:[RNCamera class]]) {
+            RCTLogError(@"Invalid view returned from registry, expecting RNCamera, got: %@", view);
+        } else {
+            [view setObjectDetectorModel:options];
+        }
+    }];
 }
 
 @end
