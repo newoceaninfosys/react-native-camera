@@ -11,6 +11,7 @@
 
 - (instancetype)init
 {
+    NSLog(@"ObjectDetectorManager init");
 //  if (self = [super init]) {
 //    FIRVision *vision = [FIRVision vision];
 //    self.textRecognizer = [vision onDeviceTextRecognizer];
@@ -25,6 +26,9 @@
 
 - (void)findObjects:(UIImage *)uiImage completed: (void (^)(NSArray * result)) completed
 {
+    NSLog(@"ObjectDetectorManager findObjects");
+    NSMutableArray *data = [[NSMutableArray alloc] init];
+    completed(data);
 //    self.scaleX = scaleX;
 //    self.scaleY = scaleY;
 //    FIRVisionImage *image = [[FIRVisionImage alloc] initWithImage:uiImage];
@@ -40,60 +44,60 @@
 //                       }];
 }
 
-- (NSArray *)processBlocks:(NSArray *)features
-{
-  NSMutableArray *textBlocks = [[NSMutableArray alloc] init];
-  for (FIRVisionTextBlock *textBlock in features) {
-      NSDictionary *textBlockDict =
-      @{@"type": @"block", @"value" : textBlock.text, @"bounds" : [self processBounds:textBlock.frame], @"components" : [self processLine:textBlock.lines]};
-      [textBlocks addObject:textBlockDict];
-  }
-  return textBlocks;
-}
-
--(NSArray *)processLine:(NSArray *)lines
-{
-  NSMutableArray *lineBlocks = [[NSMutableArray alloc] init];
-  for (FIRVisionTextLine *textLine in lines) {
-        NSDictionary *textLineDict =
-        @{@"type": @"line", @"value" : textLine.text, @"bounds" : [self processBounds:textLine.frame], @"components" : [self processElement:textLine.elements]};
-        [lineBlocks addObject:textLineDict];
-  }
-  return lineBlocks;
-}
-
--(NSArray *)processElement:(NSArray *)elements
-{
-  NSMutableArray *elementBlocks = [[NSMutableArray alloc] init];
-  for (FIRVisionTextElement *textElement in elements) {
-        NSDictionary *textElementDict =
-        @{@"type": @"element", @"value" : textElement.text, @"bounds" : [self processBounds:textElement.frame]};
-        [elementBlocks addObject:textElementDict];
-  }
-  return elementBlocks;
-}
-
--(NSDictionary *)processBounds:(CGRect)bounds
-{
-  float width = bounds.size.width * _scaleX;
-  float height = bounds.size.height * _scaleY;
-  float originX = bounds.origin.x * _scaleX;
-  float originY = bounds.origin.y * _scaleY;
-  NSDictionary *boundsDict =
-  @{
-    @"size" :
-              @{
-                @"width" : @(width),
-                @"height" : @(height)
-                },
-    @"origin" :
-              @{
-                @"x" : @(originX),
-                @"y" : @(originY)
-                }
-    };
-  return boundsDict;
-}
+//- (NSArray *)processBlocks:(NSArray *)features
+//{
+//  NSMutableArray *textBlocks = [[NSMutableArray alloc] init];
+//  for (FIRVisionTextBlock *textBlock in features) {
+//      NSDictionary *textBlockDict =
+//      @{@"type": @"block", @"value" : textBlock.text, @"bounds" : [self processBounds:textBlock.frame], @"components" : [self processLine:textBlock.lines]};
+//      [textBlocks addObject:textBlockDict];
+//  }
+//  return textBlocks;
+//}
+//
+//-(NSArray *)processLine:(NSArray *)lines
+//{
+//  NSMutableArray *lineBlocks = [[NSMutableArray alloc] init];
+//  for (FIRVisionTextLine *textLine in lines) {
+//        NSDictionary *textLineDict =
+//        @{@"type": @"line", @"value" : textLine.text, @"bounds" : [self processBounds:textLine.frame], @"components" : [self processElement:textLine.elements]};
+//        [lineBlocks addObject:textLineDict];
+//  }
+//  return lineBlocks;
+//}
+//
+//-(NSArray *)processElement:(NSArray *)elements
+//{
+//  NSMutableArray *elementBlocks = [[NSMutableArray alloc] init];
+//  for (FIRVisionTextElement *textElement in elements) {
+//        NSDictionary *textElementDict =
+//        @{@"type": @"element", @"value" : textElement.text, @"bounds" : [self processBounds:textElement.frame]};
+//        [elementBlocks addObject:textElementDict];
+//  }
+//  return elementBlocks;
+//}
+//
+//-(NSDictionary *)processBounds:(CGRect)bounds
+//{
+//  float width = bounds.size.width * _scaleX;
+//  float height = bounds.size.height * _scaleY;
+//  float originX = bounds.origin.x * _scaleX;
+//  float originY = bounds.origin.y * _scaleY;
+//  NSDictionary *boundsDict =
+//  @{
+//    @"size" :
+//              @{
+//                @"width" : @(width),
+//                @"height" : @(height)
+//                },
+//    @"origin" :
+//              @{
+//                @"x" : @(originX),
+//                @"y" : @(originY)
+//                }
+//    };
+//  return boundsDict;
+//}
 
 @end
 #else
@@ -116,8 +120,8 @@
 
 -(void)findObjects:(UIImage *)image completed:(postRecognitionBlock)completed;
 {
-//  NSLog(@"TextDetector not installed, stub used!");
-//  NSArray *features = @[@"Error, Text Detector not installed"];
+  NSLog(@"ObjectDetector not installed, stub used!");
+  NSArray *features = @[@"Error, Object Detector not installed"];
 //  completed(features);
 }
 

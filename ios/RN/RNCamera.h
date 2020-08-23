@@ -53,8 +53,6 @@
 @property(nonatomic, assign) BOOL canDetectFaces;
 @property(nonatomic, assign) BOOL canDetectBarcodes;
 
-@property(nonatomic, assign) BOOL canDetectObjects;
-
 @property(nonatomic, assign) BOOL captureAudio;
 @property(nonatomic, assign) BOOL keepAudioSession;
 @property(nonatomic, assign) BOOL useNativeZoom;
@@ -66,6 +64,8 @@
 @property(assign, nonatomic, nullable) NSNumber *defaultVideoQuality;
 @property(assign, nonatomic, nullable) NSNumber *deviceOrientation;
 @property(assign, nonatomic, nullable) NSNumber *orientation;
+
+@property(nonatomic, assign) BOOL canDetectObjects;
 
 - (id)initWithBridge:(RCTBridge *)bridge;
 - (void)updateType;
@@ -122,7 +122,7 @@
 - (bool)isRecording;
 - (void)onSubjectAreaChanged:(NSDictionary *)event;
 
-- (void)setObjectDetectorModel:(NSDictionary *)options;
+- (void)setObjectDetectorOptions:(NSDictionary *)options;
 - (void)setupOrDisableObjectDetector;
 - (void)onObject:(NSDictionary *)event;
 @end

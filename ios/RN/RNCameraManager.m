@@ -644,16 +644,24 @@ RCT_EXPORT_METHOD(getCameraIds:(RCTPromiseResolveBlock)resolve
     resolve(res);
 }
 
+RCT_CUSTOM_VIEW_PROPERTY(objectDetectorEnabled, BOOL, RNCamera)
+{
+    view.canDetectObjects = [RCTConvert BOOL:json];
+    NSLog(@"ObjectDetector objectDetectorEnabled %d", view.canDetectObjects);
+    [view setupOrDisableObjectDetector];
+}
+
 RCT_REMAP_METHOD(loadObjectDetectorModel,
                  options:(NSDictionary *)options
                  reactTag:(nonnull NSNumber *)reactTag)
 {
+    NSLog(@"ObjectDetector loadObjectDetectorModel");
     [self.bridge.uiManager addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, RNCamera *> *viewRegistry) {
         RNCamera *view = viewRegistry[reactTag];
         if (![view isKindOfClass:[RNCamera class]]) {
             RCTLogError(@"Invalid view returned from registry, expecting RNCamera, got: %@", view);
         } else {
-            [view setObjectDetectorModel:options];
+            [view setObjectDetectorOptions:options];
         }
     }];
 }
