@@ -1,22 +1,33 @@
 #import "ObjectDetectorManager.h"
 #if __has_include("TFLTensorFlowLite.h")
+#import "Firebase/Firebase.h"
 
 @interface ObjectDetectorManager ()
 //@property(nonatomic, strong) FIRVisionTextRecognizer *textRecognizer;
 //@property(nonatomic, assign) float scaleX;
 //@property(nonatomic, assign) float scaleY;
+@property(nonatomic, strong) TFLInterpreter *interpreter;
+@property(nonatomic, strong) NSDictionary *options;
 @end
 
 @implementation ObjectDetectorManager
 
-- (instancetype)init
+- (instancetype)init:(NSDictionary *)options
 {
-    NSLog(@"ObjectDetectorManager init");
-//  if (self = [super init]) {
-//    FIRVision *vision = [FIRVision vision];
-//    self.textRecognizer = [vision onDeviceTextRecognizer];
-//  }
-  return self;
+    if (self = [super init]) {
+        NSLog(@"ObjectDetectorManager init");
+        self.options = options;
+        NSString* value = [options valueForKey:@"file"];
+        NSLog(@"ObjectDetectorManager init options.file %@", value);
+          
+        NSString *modelPath = [NSBundle.mainBundle pathForResource:@"nsfw"
+                                                            ofType:@"tflite"];
+        NSError *tfliteError;
+
+        self.interpreter = [[TFLInterpreter alloc] initWithModelPath:modelPath
+                                                                  error:&tfliteError];
+    }
+    return self;
 }
 
 -(BOOL)isRealDetector
@@ -24,80 +35,49 @@
   return true;
 }
 
-- (void)findObjects:(UIImage *)uiImage completed: (void (^)(NSArray * result)) completed
+- (void)destroy
 {
-    NSLog(@"ObjectDetectorManager findObjects");
-    NSMutableArray *data = [[NSMutableArray alloc] init];
-    completed(data);
-//    self.scaleX = scaleX;
-//    self.scaleY = scaleY;
-//    FIRVisionImage *image = [[FIRVisionImage alloc] initWithImage:uiImage];
-//    NSMutableArray *textBlocks = [[NSMutableArray alloc] init];
-//    [_textRecognizer processImage:image
-//                       completion:^(FIRVisionText *_Nullable result,
-//                                    NSError *_Nullable error) {
-//                           if (error != nil || result == nil) {
-//                               completed(textBlocks);
-//                           } else {
-//                               completed([self processBlocks:result.blocks]);
-//                           }
-//                       }];
+    NSLog(@"ObjectDetectorManager destroy");
 }
 
-//- (NSArray *)processBlocks:(NSArray *)features
-//{
-//  NSMutableArray *textBlocks = [[NSMutableArray alloc] init];
-//  for (FIRVisionTextBlock *textBlock in features) {
-//      NSDictionary *textBlockDict =
-//      @{@"type": @"block", @"value" : textBlock.text, @"bounds" : [self processBounds:textBlock.frame], @"components" : [self processLine:textBlock.lines]};
-//      [textBlocks addObject:textBlockDict];
-//  }
-//  return textBlocks;
-//}
-//
-//-(NSArray *)processLine:(NSArray *)lines
-//{
-//  NSMutableArray *lineBlocks = [[NSMutableArray alloc] init];
-//  for (FIRVisionTextLine *textLine in lines) {
-//        NSDictionary *textLineDict =
-//        @{@"type": @"line", @"value" : textLine.text, @"bounds" : [self processBounds:textLine.frame], @"components" : [self processElement:textLine.elements]};
-//        [lineBlocks addObject:textLineDict];
-//  }
-//  return lineBlocks;
-//}
-//
-//-(NSArray *)processElement:(NSArray *)elements
-//{
-//  NSMutableArray *elementBlocks = [[NSMutableArray alloc] init];
-//  for (FIRVisionTextElement *textElement in elements) {
-//        NSDictionary *textElementDict =
-//        @{@"type": @"element", @"value" : textElement.text, @"bounds" : [self processBounds:textElement.frame]};
-//        [elementBlocks addObject:textElementDict];
-//  }
-//  return elementBlocks;
-//}
-//
-//-(NSDictionary *)processBounds:(CGRect)bounds
-//{
-//  float width = bounds.size.width * _scaleX;
-//  float height = bounds.size.height * _scaleY;
-//  float originX = bounds.origin.x * _scaleX;
-//  float originY = bounds.origin.y * _scaleY;
-//  NSDictionary *boundsDict =
-//  @{
-//    @"size" :
-//              @{
-//                @"width" : @(width),
-//                @"height" : @(height)
-//                },
-//    @"origin" :
-//              @{
-//                @"x" : @(originX),
-//                @"y" : @(originY)
-//                }
-//    };
-//  return boundsDict;
-//}
+- (void)run:(UIImage *)uiImage completed: (void (^)(NSArray * result)) completed
+{
+    NSLog(@"ObjectDetectorManager run");
+//    NSMutableArray *data = [[NSMutableArray alloc] init];
+//    completed(data);
+
+    CGImageRef image = uiImage.CGImage;
+    long imageWidth = CGImageGetWidth(image);
+    long imageHeight = CGImageGetHeight(image);
+    CGContextRef context = CGBitmapContextCreate(nil,
+                                                 imageWidth, imageHeight,
+                                                 8,
+                                                 imageWidth * 4,
+                                                 CGColorSpaceCreateDeviceRGB(),
+                                                 kCGImageAlphaNoneSkipFirst);
+    CGContextDrawImage(context, CGRectMake(0, 0, imageWidth, imageHeight), image);
+    UInt8 *imageData = CGBitmapContextGetData(context);
+
+    NSMutableData *inputData = [[NSMutableData alloc] initWithCapacity:0];
+
+    for (int row = 0; row < 224; row++) {
+      for (int col = 0; col < 224; col++) {
+        long offset = 4 * (col * imageWidth + row);
+        // Normalize channel values to [0.0, 1.0]. This requirement varies
+        // by model. For example, some models might require values to be
+        // normalized to the range [-1.0, 1.0] instead, and others might
+        // require fixed-point values or the original bytes.
+        // (Ignore offset 0, the unused alpha channel)
+        Float32 red = imageData[offset+1] / 255.0f;
+        Float32 green = imageData[offset+2] / 255.0f;
+        Float32 blue = imageData[offset+3] / 255.0f;
+
+        [inputData appendBytes:&red length:sizeof(red)];
+        [inputData appendBytes:&green length:sizeof(green)];
+        [inputData appendBytes:&blue length:sizeof(blue)];
+      }
+    }
+}
 
 @end
 #else
@@ -118,11 +98,11 @@
   return false;
 }
 
--(void)findObjects:(UIImage *)image completed:(postRecognitionBlock)completed;
+-(void)run:(UIImage *)image completed:(postRecognitionBlock)completed;
 {
   NSLog(@"ObjectDetector not installed, stub used!");
   NSArray *features = @[@"Error, Object Detector not installed"];
-//  completed(features);
+  completed(features);
 }
 
 @end

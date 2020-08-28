@@ -48,7 +48,7 @@
 @property (nonatomic, copy) RCTDirectEventBlock onObjectDetected;
 @property (nonatomic, assign) BOOL finishedDetectingObject;
 @property (nonatomic, strong) id objectDetector;
-@property (nonatomic, assign) NSDictionary *objectDetectorOptions;
+@property (nonatomic, assign) NSDictionary *objectDetectorParams;
 @property (nonatomic, copy) NSDate *startObject;
 
 @end
@@ -72,8 +72,8 @@ BOOL _sessionInterrupted = NO;
         self.faceDetector = [self createFaceDetectorMlKit];
         self.barcodeDetector = [self createBarcodeDetectorMlKit];
         
-        self.objectDetectorOptions = nil;
-        self.objectDetector = [self createObjectDetector];
+        self.objectDetectorParams = nil;
+        self.objectDetector = nil;
         
         self.finishedReadingText = true;
         self.finishedDetectingFace = true;
@@ -2264,7 +2264,7 @@ BOOL _sessionInterrupted = NO;
         if (canSubmitForObjectDetection) {
             _finishedDetectingObject = false;
             self.startObject = [NSDate date];
-            [self.objectDetector findObjects:image completed:^(NSArray * objects) {
+            [self.objectDetector run:image completed:^(NSArray * objects) {
                 NSDictionary *eventText = @{@"type" : @"objectDetected", @"data" : objects};
                 [self onObject:eventText];
                 self.finishedDetectingObject = true;
@@ -2279,10 +2279,19 @@ BOOL _sessionInterrupted = NO;
 
 # pragma mark - TextDetector
 
-- (void)setObjectDetectorModel:(NSDictionary *)options
+- (void)setObjectDetectorOptions:(NSDictionary *)options
 {
-    NSLog(@"ObjectDetector setObjectDetectorModel");
-    self.objectDetectorOptions = options;
+    if(options != nil) {
+        NSLog(@"ObjectDetector setObjectDetectorModel");
+        _objectDetectorParams = options;
+        
+        if(self.objectDetector != nil) {
+            [self.objectDetector destroy];
+            self.objectDetector = nil;
+        }
+        
+        self.objectDetector = [self createObjectDetector];
+    }
 }
 
 - (void)onObject:(NSDictionary *)event
@@ -2297,7 +2306,7 @@ BOOL _sessionInterrupted = NO;
 {
     NSLog(@"ObjectDetector createObjectDetector");
     Class objectDetectorManagerClass = NSClassFromString(@"ObjectDetectorManager");
-    return [[objectDetectorManagerClass alloc] init];
+    return [[objectDetectorManagerClass alloc] init:_objectDetectorParams];
 }
 
 - (void)setupOrDisableObjectDetector
