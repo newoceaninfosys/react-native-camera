@@ -4,9 +4,12 @@
 @interface ObjectDetectorManager : NSObject
 typedef void(^postRecognitionBlock)(NSArray *textBlocks);
 
-- (instancetype)init:(NSDictionary *)options;
+- (instancetype)init;
 - (BOOL)isRealDetector;
 - (void)run:(UIImage *)image completed:(postRecognitionBlock)completed;
-- (void)destroy;
+- (void)load:(NSDictionary *)options;
+- (NSData *)copyDataFromUIImage:(UIImage *) uiImage;
+- (UIImage *) cropImage:(UIImage *) uiImage;
+- (UIImage *) resizeImage:(UIImage *) uiImage shape:(int)shape;
 
 @end

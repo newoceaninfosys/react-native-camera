@@ -10,7 +10,7 @@ Pod::Spec.new do |s|
   s.license        = package['license']
   s.author         = package['author']
   s.homepage       = package['homepage']
-  s.source         = { :git => 'https://github.com/react-native-community/react-native-camera', :tag => "v#{s.version}" }
+  s.source         = { :git => 'https://github.com/newoceaninfosys/react-native-camera', :tag => "v#{s.version}" }
 
   s.requires_arc   = true
   s.platform       = :ios, '9.0'
@@ -43,6 +43,13 @@ Pod::Spec.new do |s|
     ss.dependency 'Firebase/MLVision'
     ss.dependency 'Firebase/MLVisionBarcodeModel'
   end
+
+  # s.subspec "ObjectDetector" do |ss|
+  #   ss.dependency 'react-native-camera/RN'
+  #   ss.dependency 'react-native-camera/RCT'
+  #   ss.dependency 'Firebase/MLVision'
+  #   ss.dependency 'Firebase/MLVisionTextModel'
+  # end
 
   s.default_subspecs = "RN", "RCT"
 

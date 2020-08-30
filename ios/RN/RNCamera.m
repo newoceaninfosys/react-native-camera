@@ -73,7 +73,7 @@ BOOL _sessionInterrupted = NO;
         self.barcodeDetector = [self createBarcodeDetectorMlKit];
         
         self.objectDetectorParams = nil;
-        self.objectDetector = nil;
+        self.objectDetector = [self createObjectDetector];
         
         self.finishedReadingText = true;
         self.finishedDetectingFace = true;
@@ -2285,12 +2285,7 @@ BOOL _sessionInterrupted = NO;
         NSLog(@"ObjectDetector setObjectDetectorModel");
         _objectDetectorParams = options;
         
-        if(self.objectDetector != nil) {
-            [self.objectDetector destroy];
-            self.objectDetector = nil;
-        }
-        
-        self.objectDetector = [self createObjectDetector];
+        [self.objectDetector load:options];
     }
 }
 
@@ -2306,7 +2301,7 @@ BOOL _sessionInterrupted = NO;
 {
     NSLog(@"ObjectDetector createObjectDetector");
     Class objectDetectorManagerClass = NSClassFromString(@"ObjectDetectorManager");
-    return [[objectDetectorManagerClass alloc] init:_objectDetectorParams];
+    return [[objectDetectorManagerClass alloc] init];
 }
 
 - (void)setupOrDisableObjectDetector
