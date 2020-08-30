@@ -115,7 +115,7 @@
 
 - (void)run:(UIImage *)uiImage completed: (void (^)(NSArray * result)) completed
 {
-    NSLog(@"ObjectDetectorManager run");
+//    NSLog(@"ObjectDetectorManager run");
     NSMutableArray *recognitionList = [[NSMutableArray alloc] init];
 //    completed(data);
     

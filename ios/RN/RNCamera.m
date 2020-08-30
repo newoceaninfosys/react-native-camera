@@ -2260,7 +2260,7 @@ BOOL _sessionInterrupted = NO;
         }
         
         // find objects
-        NSLog(@"ObjectDetector captureOutput canSubmitForObjectDetection %d", canSubmitForObjectDetection);
+//        NSLog(@"ObjectDetector captureOutput canSubmitForObjectDetection %d", canSubmitForObjectDetection);
         if (canSubmitForObjectDetection) {
             _finishedDetectingObject = false;
             self.startObject = [NSDate date];
@@ -2291,7 +2291,7 @@ BOOL _sessionInterrupted = NO;
 
 - (void)onObject:(NSDictionary *)event
 {
-    NSLog(@"ObjectDetector onObject");
+//    NSLog(@"ObjectDetector onObject");
     if (_onObjectDetected && _session) {
         _onObjectDetected(event);
     }
