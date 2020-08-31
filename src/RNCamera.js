@@ -646,11 +646,11 @@ export default class Camera extends React.Component<PropsType, StateType> {
     CameraManager.resumePreview(this._cameraHandle);
   }
 
-  loadObjectDetectorModel(new_params) {
+  loadObjectDetectorModel(new_params: ObjectDetectorOptions) {
     if (!this._cameraHandle) {
       throw 'Camera handle cannot be null';
     }
-    const params = {
+    const params: ObjectDetectorOptions = {
       file: 'detect.tflite',
       label: 'labelmap.txt',
       imageMean: 127.5,
@@ -663,8 +663,11 @@ export default class Camera extends React.Component<PropsType, StateType> {
       maintainAspect: false,
       desiredPreviewSize: [640, 480],
       savePreview: false,
+      crop: true,
+      maxResults: 2,
       ...new_params
     }
+    
     CameraManager.loadObjectDetectorModel(params, this._cameraHandle);
   }
 
@@ -956,3 +959,20 @@ const RNCamera = requireNativeComponent('RNCamera', Camera, {
     testID: true,
   },
 });
+
+type ObjectDetectorOptions = {
+  file?: string,
+  label?: string,
+  imageMean?: float,
+  imageSTD?: float,
+  numThreads?: number,
+  inputSize?: number,
+  labelOffset?: number,
+  isQuantized?: boolean,
+  minConfidence?: float,
+  maintainAspect?: boolean,
+  desiredPreviewSize?: [number, number],
+  savePreview?: boolean,
+  crop?: boolean,
+  maxResults?: number,
+};

@@ -137,12 +137,13 @@ public class ObjectDetectionAPI {
         croppedBitmap.getPixels(_intValues, 0, croppedBitmap.getWidth(), 0, 0, croppedBitmap.getWidth(), croppedBitmap.getHeight());
 
         _imgData.rewind();
+        int inputSize = _params.getInputSize();
 
         float imageMean = (float)_params.getImageMean();
         float imageSTD = (float)_params.getImageSTD();
-        for (int i = 0; i < _params.getInputSize(); ++i) {
-            for (int j = 0; j < _params.getInputSize(); ++j) {
-                final int pixelValue = _intValues[i * _params.getInputSize() + j];
+        for (int i = 0; i < inputSize; ++i) {
+            for (int j = 0; j < inputSize; ++j) {
+                final int pixelValue = _intValues[i * inputSize + j];
                 if(_params.getIsQuantized()) {
                     // Quantized model
                     _imgData.put((byte) ((pixelValue >> 16) & 0xFF));
@@ -173,7 +174,8 @@ public class ObjectDetectionAPI {
         // Run the inference call.
         _objectDetector.runForMultipleInputsOutputs(inputArray, outputMap);
 
-        final ArrayList<Recognition> recognitions = new ArrayList<>(5);
+        int maxResults = _params.getMaxResults();
+        final ArrayList<Recognition> recognitions = new ArrayList<>(maxResults);
 
         // Show the best detections.
         // after scaling them back to the input size.
@@ -184,24 +186,29 @@ public class ObjectDetectionAPI {
         // If you don't use the output's numDetections, you'll get nonsensical data
         int numDetectionsOutput = Math.min(NUM_DETECTIONS, (int) _numDetections[0]); // cast from float to integer, use min for safety
 
+        double minConfidence = _params.getMinConfidence();
         for (int i = 0; i < numDetectionsOutput; ++i) {
-            final RectF detection =
-                    new RectF(
-                            _outputLocations[0][i][1] * _params.getInputSize(),
-                            _outputLocations[0][i][0] * _params.getInputSize(),
-                            _outputLocations[0][i][3] * _params.getInputSize(),
-                            _outputLocations[0][i][2] * _params.getInputSize());
+            double conf = _outputScores[0][i];
+            if(conf >= minConfidence) {
+                final RectF detection =
+                        new RectF(
+                                _outputLocations[0][i][1] * inputSize,
+                                _outputLocations[0][i][0] * inputSize,
+                                _outputLocations[0][i][3] * inputSize,
+                                _outputLocations[0][i][2] * inputSize);
 
-            // SSD Mobilenet V1 Model assumes class 0 is background class
-            // in label file and class labels start from 1 to number_of_classes+1,
-            // while outputClasses correspond to class index from 0 to number_of_classes
-            int labelOffset = _params.getLabelOffset();
-            recognitions.add(
-                    new Recognition(
-                            "" + i,
-                            labels.get((int) _outputClasses[0][i] + labelOffset),
-                            _outputScores[0][i],
-                            detection));
+                int labelOffset = _params.getLabelOffset();
+                recognitions.add(
+                        new Recognition(
+                                "" + i,
+                                labels.get((int) _outputClasses[0][i] + labelOffset),
+                                _outputScores[0][i],
+                                detection));
+            }
+
+            if(recognitions.size() >= maxResults) {
+                break;
+            }
         }
 
         return recognitions;

@@ -15,6 +15,8 @@ public class ObjectDetectorParams {
     private final double minConfidence;
     private final ReadableArray desiredPreviewSize;
     private final boolean savePreview;
+    private final boolean crop;
+    private final int maxResults;
 
     public ObjectDetectorParams(
             final String modelFile,
@@ -28,7 +30,9 @@ public class ObjectDetectorParams {
             final boolean maintainAspect,
             final double minConfidence,
             final ReadableArray desiredPreviewSize,
-            final boolean savePreview) {
+            final boolean savePreview,
+            final boolean crop,
+            final int maxResults) {
         this.modelFile = modelFile;
         this.labelFile = labelFile;
         this.inputSize = inputSize;
@@ -41,6 +45,8 @@ public class ObjectDetectorParams {
         this.minConfidence = minConfidence;
         this.desiredPreviewSize = desiredPreviewSize;
         this.savePreview = savePreview;
+        this.crop = crop;
+        this.maxResults = maxResults;
     }
 
     public String getModelFile() { return modelFile; }
@@ -55,4 +61,6 @@ public class ObjectDetectorParams {
     public double getMinConfidence() { return minConfidence; }
     public ReadableArray getDesiredPreviewSize() { return desiredPreviewSize; }
     public boolean getSavePreview() { return savePreview; }
+    public boolean getCrop() { return crop; }
+    public int getMaxResults() { return maxResults; }
 }
