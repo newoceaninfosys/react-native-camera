@@ -5,8 +5,12 @@ import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ImageFormat;
+import android.graphics.Matrix;
+import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.YuvImage;
 import android.media.CamcorderProfile;
@@ -247,7 +251,7 @@ public class RNCameraView extends CameraView implements LifecycleEventListener, 
         if (willCallObjectDetectTask) {
           objectProcessorTaskLock = true;
           ObjectDetectorAsyncTaskDelegate delegate = (ObjectDetectorAsyncTaskDelegate) cameraView;
-          new ObjectDetectorAsyncTask(delegate, objectDetectorAPI, width, height, correctRotation, getCroppedBitmap((TextureView) cameraView.getView())).execute();
+          new ObjectDetectorAsyncTask(delegate, objectDetectorAPI, width, height, correctRotation, getProcessedBitmap((TextureView) cameraView.getView())).execute();
         }
       }
     });
@@ -657,13 +661,34 @@ public class RNCameraView extends CameraView implements LifecycleEventListener, 
     }
   }
 
-  private Bitmap getCroppedBitmap(TextureView view) {
+  private Bitmap getProcessedBitmap(TextureView view) {
     if (_params == null) {
       return null;
     }
+    int inputSize = _params.getInputSize();
 
-    // Capture and resize to inputSize
-    return view.getBitmap(_params.getInputSize(), _params.getInputSize());
+    if(_params.getCrop()) {
+      Bitmap bm = view.getBitmap();
+
+      // Crop
+      int maxSize = bm.getWidth();
+      if(bm.getWidth() > bm.getHeight()) {
+        maxSize = bm.getHeight();
+      }
+
+      // Crop top
+      Bitmap croppedBm = Bitmap.createBitmap(bm, 0, 0, maxSize, maxSize);
+      bm.recycle();
+
+      Bitmap resizedBitmap = Bitmap.createScaledBitmap(croppedBm, inputSize, inputSize, true);
+      croppedBm.recycle();
+
+      return resizedBitmap;
+
+    } else {
+      // resize/scale to inputShape
+      return view.getBitmap(inputSize, inputSize);
+    }
   }
 
   @Override

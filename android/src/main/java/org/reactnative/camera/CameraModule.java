@@ -513,9 +513,11 @@ public class CameraModule extends ReactContextBaseJavaModule {
                     double minConfidence = model.getDouble("minConfidence");
                     ReadableArray desiredPreviewSize = model.getArray("desiredPreviewSize");
                     boolean savePreview = model.getBoolean("savePreview");
+                    boolean crop = model.getBoolean("crop");
+                    int maxResults = model.getInt("maxResults");
 
                     ObjectDetectorParams params = new ObjectDetectorParams(
-                            modelFile, labelFile, inputSize, numThreads, imageMean, imageSTD, labelOffset, isQuantized, maintainAspect, minConfidence, desiredPreviewSize, savePreview
+                            modelFile, labelFile, inputSize, numThreads, imageMean, imageSTD, labelOffset, isQuantized, maintainAspect, minConfidence, desiredPreviewSize, savePreview, crop, maxResults
                     );
 
                     cameraView.setObjectDetectorModel(params);
