@@ -8,7 +8,7 @@ typedef void(^postRecognitionBlock)(NSArray *textBlocks);
 - (BOOL)isRealDetector;
 - (void)run:(UIImage *)image completed:(postRecognitionBlock)completed;
 - (void)load:(NSDictionary *)options;
-- (NSData *)copyDataFromUIImage:(UIImage *) uiImage;
+- (NSData *) copyDataFromUIImage:(UIImage *) uiImage shape:(int)shape;
 - (UIImage *) cropImage:(UIImage *) uiImage;
 - (UIImage *) resizeImage:(UIImage *) uiImage shape:(int)shape;
 

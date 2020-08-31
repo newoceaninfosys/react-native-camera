@@ -2,9 +2,6 @@
 #if __has_include("TFLTensorFlowLite.h")
 
 @interface ObjectDetectorManager ()
-//@property(nonatomic, strong) FIRVisionTextRecognizer *textRecognizer;
-//@property(nonatomic, assign) float scaleX;
-//@property(nonatomic, assign) float scaleY;
 @property(nonatomic, strong) TFLInterpreter *interpreter;
 @property(nonatomic, strong) TFLTensor *inputTensor;
 @property(nonatomic, strong) TFLTensor *resultsOutput;
@@ -31,16 +28,24 @@
 {
     NSLog(@"ObjectDetectorManager load");
     
+    // TODO: destroy previous instance
+//    [self.interpreter dealloc] ???
+    
     self.options = options;
-//    NSString* value = [options valueForKey:@"file"];
       
     NSString *modelPath = [NSBundle.mainBundle pathForResource:@"detect"
                                                         ofType:@"tflite"];
+    
+    // TODO: Implement remote model
+    
+    
     NSError *error = nil;
+    
+    int numThreads = [[self.options valueForKey:@"numThreads"] integerValue];
 
     TFLInterpreterOptions *tfoptions = [[TFLInterpreterOptions alloc] init];
-//    tfoptions.numberOfThreads = 2;
-    [tfoptions setNumberOfThreads:2];
+//    tfoptions.numberOfThreads = numThreads;
+    [tfoptions setNumberOfThreads:numThreads];
     
     self.interpreter = [[TFLInterpreter alloc] initWithModelPath:modelPath
                                                          options:tfoptions
@@ -68,7 +73,6 @@
     
     self.labels = [fileContents componentsSeparatedByString:@"\n"];
     
-    BOOL isQuantized = [[self.options valueForKey:@"isQuantized"] boolValue];
     int inputSize = [[self.options valueForKey:@"inputSize"] integerValue];
 
     [self.interpreter allocateTensorsWithError:&error];
@@ -83,32 +87,31 @@
         return;
     }
     
-    if([self.inputTensor dataType] == TFLTensorDataTypeUInt8 && isQuantized) {
-        // QUANTIZED
-        NSArray *inputShapes = [self.inputTensor shapeWithError:&error];
-        if(error != nil) {
-            NSLog(@"[Error] shapeWithError %@", [error localizedDescription]);
-            return;
-        }
-        
-        if(inputShapes == nil) {
-            NSLog(@"[Error] %@", @"input Tensor's shape is nil!");
-            return;
-        }
-        
-        if(([[inputShapes objectAtIndex:0] intValue] != 1) &&
-        ([[inputShapes objectAtIndex:1] intValue] != inputSize) &&
-        ([[inputShapes objectAtIndex:2] intValue] != inputSize) &&
-        ([[inputShapes objectAtIndex:3] intValue] != 3)){
-            NSLog(@"[Error] %@", @"input tensor is not correct!");
-            return;
-        }
-        
-    } else if([self.inputTensor dataType] == TFLTensorDataTypeFloat32 && !isQuantized){
-        // FLoat
-    } else {
-        // ???
-        NSLog(@"[Error] inputTensor not recognized!");
+    // [self.inputTensor dataType] == TFLTensorDataTypeUInt8 > Quantized
+    // [self.inputTensor dataType] == TFLTensorDataTypeFloat32 > Float
+    
+    if([self.inputTensor dataType] != TFLTensorDataTypeUInt8) {
+        NSLog(@"[Error] inputTensor is not quantized!");
+        return;
+    }
+    
+    NSArray *inputShapes = [self.inputTensor shapeWithError:&error];
+    if(error != nil) {
+        NSLog(@"[Error] shapeWithError %@", [error localizedDescription]);
+        return;
+    }
+    
+    if(inputShapes == nil) {
+        NSLog(@"[Error] %@", @"input Tensor's shape is nil!");
+        return;
+    }
+    
+    if(([[inputShapes objectAtIndex:0] intValue] != 1) &&
+    ([[inputShapes objectAtIndex:1] intValue] != inputSize) &&
+    ([[inputShapes objectAtIndex:2] intValue] != inputSize) &&
+    ([[inputShapes objectAtIndex:3] intValue] != 3)){
+        NSLog(@"[Error] %@", @"input tensor is not correct!");
+        return;
     }
     
 }
@@ -119,9 +122,10 @@
     NSMutableArray *recognitionList = [[NSMutableArray alloc] init];
 //    completed(data);
     
-    int inputSize = [[self.options valueForKey:@"inputSize"] integerValue];
-    int labelOffset = [[self.options valueForKey:@"labelOffset"] integerValue];
-    float minConfidence = [[self.options valueForKey:@"minConfidence"] integerValue];
+    int inputSize = (int)[[self.options valueForKey:@"inputSize"] integerValue];
+    int labelOffset = (int)[[self.options valueForKey:@"labelOffset"] integerValue];
+    float minConfidence = [[self.options valueForKey:@"minConfidence"] floatValue];
+    int maxResults = (int)[[self.options valueForKey:@"maxResults"] integerValue];
     
     NSError *error = nil;
     BOOL result = NO;
@@ -177,6 +181,10 @@
 //                                 boundingBox[4*i+2]-boundingBox[4*i]);
         
         [recognitionList addObject:@{@"confidence": [NSNumber numberWithFloat:scores[i]], @"label": outputClass}];
+        
+        if([recognitionList count] >= maxResults) {
+            break;
+        }
     }
     
     completed(recognitionList);
@@ -242,11 +250,16 @@
 }
 
 -(NSData *) copyDataFromUIImage:(UIImage *) uiImage shape:(int)shape {
-    // Crop
-    UIImage *newImage = [self cropImage:uiImage];
+    BOOL crop = [[self.options valueForKey:@"crop"] boolValue];
     
-    // Resize
-    newImage = [self resizeImage:newImage shape:shape];
+    UIImage *newImage;
+    
+    if(crop) {
+        UIImage *croppedImage = [self cropImage:uiImage];
+        newImage = [self resizeImage:croppedImage shape:shape];
+    } else {
+        newImage = [self resizeImage:uiImage shape:shape];
+    }
     
     CGImageRef image = newImage.CGImage;
     long imageWidth = CGImageGetWidth(image);
@@ -258,8 +271,9 @@
                                                  CGColorSpaceCreateDeviceRGB(),
                                                  kCGImageAlphaNoneSkipFirst);
     CGContextDrawImage(context, CGRectMake(0, 0, imageWidth, imageHeight), image);
-    
-    NSMutableData *inputData = [NSMutableData dataWithLength:(1 * shape * shape * 3)];
+
+    NSUInteger byteCount = 1 * shape * shape * 3;
+    NSMutableData *inputData = [NSMutableData dataWithLength:byteCount];
     uint8_t *scaledRgbPixels = [inputData mutableBytes];
     uint8_t *scaledArgbPixels = (uint8_t *)CGBitmapContextGetData(context);
 
