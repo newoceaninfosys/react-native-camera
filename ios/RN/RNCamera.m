@@ -48,7 +48,7 @@
 @property (nonatomic, copy) RCTDirectEventBlock onObjectDetected;
 @property (nonatomic, assign) BOOL finishedDetectingObject;
 @property (nonatomic, strong) id objectDetector;
-@property (nonatomic, assign) NSDictionary *objectDetectorOptions;
+@property (nonatomic, assign) NSDictionary *objectDetectorParams;
 @property (nonatomic, copy) NSDate *startObject;
 
 @end
@@ -72,7 +72,7 @@ BOOL _sessionInterrupted = NO;
         self.faceDetector = [self createFaceDetectorMlKit];
         self.barcodeDetector = [self createBarcodeDetectorMlKit];
         
-        self.objectDetectorOptions = nil;
+        self.objectDetectorParams = nil;
         self.objectDetector = [self createObjectDetector];
         
         self.finishedReadingText = true;
@@ -2260,11 +2260,11 @@ BOOL _sessionInterrupted = NO;
         }
         
         // find objects
-        NSLog(@"ObjectDetector captureOutput canSubmitForObjectDetection %d", canSubmitForObjectDetection);
+//        NSLog(@"ObjectDetector captureOutput canSubmitForObjectDetection %d", canSubmitForObjectDetection);
         if (canSubmitForObjectDetection) {
             _finishedDetectingObject = false;
             self.startObject = [NSDate date];
-            [self.objectDetector findObjects:image completed:^(NSArray * objects) {
+            [self.objectDetector run:image completed:^(NSArray * objects) {
                 NSDictionary *eventText = @{@"type" : @"objectDetected", @"data" : objects};
                 [self onObject:eventText];
                 self.finishedDetectingObject = true;
@@ -2279,15 +2279,19 @@ BOOL _sessionInterrupted = NO;
 
 # pragma mark - TextDetector
 
-- (void)setObjectDetectorModel:(NSDictionary *)options
+- (void)setObjectDetectorOptions:(NSDictionary *)options
 {
-    NSLog(@"ObjectDetector setObjectDetectorModel");
-    self.objectDetectorOptions = options;
+    if(options != nil) {
+        NSLog(@"ObjectDetector setObjectDetectorModel");
+        _objectDetectorParams = options;
+        
+        [self.objectDetector load:options];
+    }
 }
 
 - (void)onObject:(NSDictionary *)event
 {
-    NSLog(@"ObjectDetector onObject");
+//    NSLog(@"ObjectDetector onObject");
     if (_onObjectDetected && _session) {
         _onObjectDetected(event);
     }
